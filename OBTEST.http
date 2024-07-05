@@ -1,0 +1,6 @@
+@OBTEST_HostAddress = http://localhost:5042
+
+GET {{OBTEST_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,87 +1,134 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.OpenApi.Models;
-using NSwag;
-using OBTEST.Controllers;
-using OBTEST.DBContext;
-using OBTEST.Helpers;
 using OBTEST.Models;
+using OBTEST.DBContext;
 using OBTEST.Until;
+using Microsoft.OpenApi.Models;
+using System.Linq;
+using System.Reflection;
+using Microsoft.AspNetCore.Authorization;
+using NSwag.Annotations;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// 添加服务到容器
-builder.Services.AddControllers();
-
-// 了解更多关于配置Swagger/OpenAPI的信息：https://aka.ms/aspnetcore/swashbuckle
-//builder.Services.AddEndpointsApiExplorer();
-
-builder.Services.AddSwaggerGen(options =>
+public class Program
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
+    public static void Main(string[] args)
     {
-        Version = "v1",
-        Title = "TestAPI",
-        Description = "An ASP.NET Core Web API for managing ToDo items",
-        TermsOfService = new Uri("https://example.com/terms")
-    });
-});
+        var builder = WebApplication.CreateBuilder(args);
 
+        // Configure services
+        ConfigureServices(builder.Services);
 
-// 加载配置
-var Configuration = builder.Configuration;
+        var app = builder.Build();
 
-// 获取数据库配置
-UtilDB_Core.GetDBIConfiguration(Configuration);
+        // Configure middleware
+        Configure(app);
 
-// 添加数据库上下文
-builder.Services.AddDbContext<TodoContext>(options =>
-    options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+        app.Run();
+    }
 
-// 注册用户信息服务
-builder.Services.AddScoped<UserInfo>(); // 注册 UserInfoMiddleware
-
-// 修改 JSON 开头小写
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
+    public static void ConfigureServices(IServiceCollection services)
     {
-        options.JsonSerializerOptions.PropertyNamingPolicy = null;
-    });
+        var Configuration = new ConfigurationBuilder()
+            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .Build();
 
-// 增加认证设置
-builder.Services.AddAuthentication("BasicAuthentication")
-        .AddScheme<AuthenticationSchemeOptions, BasicAuthHandler>("BasicAuthentication", null);
+        services.AddAuthentication("BasicAuthentication")
+                .AddScheme<AuthenticationSchemeOptions, BasicAuthHandler>("BasicAuthentication", null);
 
+        services.AddScoped<UserInfo>();
 
-var app = builder.Build();
+        services.AddAuthorization();
 
-// 配置中间件
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
+        services.AddDbContext<TodoContext>(options =>
+            options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+
+        services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new OpenApiInfo { Title = "Your API", Version = "v1" });
+
+            c.AddSecurityDefinition("BasicAuth", new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "basic",
+                Description = "Basic Authentication"
+            });
+
+            c.TagActionsBy(api =>
+            {
+                var tags = api.ActionDescriptor.EndpointMetadata
+                    .OfType<OpenApiTagsAttribute>()
+                    .SelectMany(attr => attr.Tags)
+                    .Distinct()
+                    .ToList();
+
+                return tags.Any() ? tags : new List<string> { "Default" };
+            });
+
+            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            c.IncludeXmlComments(xmlPath);
+
+            c.OperationFilter<BasicAuthOperationFilter>();
+        });
+
+        services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNamingPolicy = null;
+            });
+    }
+
+    private static void Configure(WebApplication app)
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-        // 添加配置以包含认证输入字段
-        c.InjectJavascript("/swagger-ui-auth.js", "text/javascript");
-    });
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Your API");
+        });
+
+        app.UseRouting();
+
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+        app.UseMiddleware<UserInfoMiddleware>();
+
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
+        });
+    }
+
+    public class BasicAuthOperationFilter : IOperationFilter
+    {
+        public void Apply(OpenApiOperation operation, OperationFilterContext context)
+        {
+            var hasAuthorizeAttribute = context.MethodInfo.DeclaringType.GetCustomAttributes(true)
+                .Union(context.MethodInfo.GetCustomAttributes(true))
+                .OfType<AuthorizeAttribute>()
+                .Any();
+
+            if (hasAuthorizeAttribute)
+            {
+                operation.Security = new List<OpenApiSecurityRequirement>
+                {
+                    new OpenApiSecurityRequirement
+                    {
+                        [
+                            new OpenApiSecurityScheme
+                            {
+                                Reference = new OpenApiReference
+                                {
+                                    Type = ReferenceType.SecurityScheme,
+                                    Id = "BasicAuth"
+                                }
+                            }
+                        ] = new string[] { }
+                    }
+                };
+            }
+        }
+    }
 }
-
-app.UseHttpsRedirection();
-app.UseRouting();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-// 添加中间件用户信息
-app.UseMiddleware<UserInfoMiddleware>();
-
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapControllers();
-});
-
-app.Run();

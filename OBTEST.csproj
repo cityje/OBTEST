@@ -5,28 +5,34 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+	<NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NSwag.Annotations" Version="13.18.2" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
-	  <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.19" />
-	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.19" />
-	  <PackageReference Include="Dapper" Version="2.0.123" />
+    <Compile Remove="Controllers\FileName.cs" />
+    <Compile Remove="Helpers\UtilDB_Core.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NSwag.Annotations" Version="14.0.8" />
+    <PackageReference Include="NSwag.AspNetCore" Version="14.0.8" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.6" />
+	  <PackageReference Include="Dapper" Version="2.1.35" />
 	  <PackageReference Include="NetTopologySuite" Version="2.5.0" />
 	  <PackageReference Include="NetTopologySuite.Features" Version="2.1.0" />
 	  <PackageReference Include="NetTopologySuite.IO.Esri.Shapefile" Version="1.0.0" />
 	  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-	  <PackageReference Include="GeoLibrary" Version="1.2.1" />
-	  <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.19" />
-	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.16" />
-	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite" Version="6.0.19" />
-	  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.19">
+	  <PackageReference Include="GeoLibrary" Version="1.3.0" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.6" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.6" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer.NetTopologySuite" Version="8.0.6" />
+	  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.6">
 	    <PrivateAssets>all</PrivateAssets>
 	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	  </PackageReference>
-	  <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
-	  <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.31.0" />
+	  <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />
+	  <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.6.2" />
   </ItemGroup>
 
 </Project>

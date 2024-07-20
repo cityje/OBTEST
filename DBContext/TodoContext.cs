@@ -1,32 +1,37 @@
-﻿using OBTEST.Helpers;
+﻿//using OBTEST.Helpers;
 using OBTEST.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using OBTEST.Controllers;
-using OBTEST.Models;
+
 
 namespace OBTEST.DBContext
 {
-    //繼承DbContext
     public class TodoContext : DbContext
     {
         public TodoContext(DbContextOptions<TodoContext> options) : base(options)
         {
         }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<ORG_ACCOUNT>()
+                .HasKey(o => o.ID_NO);
 
+            base.OnModelCreating(modelBuilder);
+        }
 
         #region 屬性表
         /// <summary>
-        /// 圖資管理_社區範圍資料
+        /// 使用者資訊
         /// </summary>
-        public virtual DbSet<T_RejuvenationPlan> T_RejuvenationPlan { get; set; }
+        public virtual DbSet<ORG_ACCOUNT> ORG_ACCOUNT { get; set; }
 
 
         /// <summary>
-        /// 使用者資訊
+        /// 公務計畫表單
         /// </summary>
-        public virtual DbSet<Sys_users> Sys_users { get; set; }
+        public DbSet<GRP_PROPOSAL> GRP_PROPOSALS { get; set; }
 
         #endregion
     }
